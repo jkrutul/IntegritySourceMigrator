@@ -1,10 +1,14 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,6 +18,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import models.Member;
 import models.Project;
 import models.Sandbox;
 
@@ -21,10 +26,11 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-public class App{
+public class App{ //
 	public static final String PROPERTIES_FILE = "rict.properties";
 	public static final String PROPERTY_OLD_CLIENT_DIR = "OLD_CLIENT_DIR";
 	public static final String PROPERTY_NEW_CLIENT_INSTALLATOR_DIR = "NEW_CLIENT_INSTALL_APP_DIR";
@@ -35,22 +41,29 @@ public class App{
 	public static final String PROPERTY_OLD_SERVER_HOSTNAMES = "OLD_SERVER_HOSTNAMES";
 	public static final String PROPERTY_HOTFIXES_DIR = "HOTFIXES_DIR";
 	
+	public static final String SERVER_SRC = "192.168.153.29";
+	public static final String SERVER_DEST = "192.168.153.56";
+	
 	public static String oldClientDir, installAppDir, appDir, userHome, mksDir, SIDistDir, serverHostname, serverPort, newIntegrityClientDir, hotfixesDir;
 	public static List<String> oldServerHostnames;
 	public static PropertiesConfiguration clientInstallProp;
 	
 	public static CompositeConfiguration config;
-	static final Logger log = LogManager.getLogger(App.class.getName());
+	static final Logger l = LogManager.getLogger(App.class.getName());
 
 	private static int processWorkTimeLimit = 60*20;
 	private static int processCheckInterval = 10;
 	
+	private static List<Project> projects;
+	private static List<Sandbox> sandboxes;
+
+	
 	private static Timestamp mainStart;
-	private static APIUtils api;
+	private static APIUtils src, dest;
 	
 	static {
-		log.info("********** Rollout Integrity Client Tool **********");
-		System.out.println("********** Rollout Integrity Client Tool **********");
+
+		System.out.println("********** Integrity Source Migratoin Tool **********");
 		config = new CompositeConfiguration();
 		
 		config.addConfiguration(new SystemConfiguration());
@@ -66,13 +79,13 @@ public class App{
 			if (f.canRead()) {
 				try {
 					config.addConfiguration(new PropertiesConfiguration(f.getAbsoluteFile()));
-					log.debug("Added configuration from: " + f.getAbsoluteFile());
+					l.debug("Added configuration from: " + f.getAbsoluteFile());
 				} catch (ConfigurationException e) {
 					e.printStackTrace();
 				}
 
 			} else {
-				log.error("Configuration file: "+ f.getAbsoluteFile()+ " doesn't exist");
+				l.error("Configuration file: "+ f.getAbsoluteFile()+ " doesn't exist");
 			}
 		}
 		
@@ -89,32 +102,319 @@ public class App{
 		}
 		hotfixesDir = config.getString(PROPERTY_HOTFIXES_DIR,installAppDir + File.separator+"hotfixes");
 		
-		api = new APIUtils();
+		src = new APIUtils();
+		dest = new APIUtils();
 	
 	}
 	
     public static void main( String[] args ){    	
 
         mainStart = new Timestamp(new java.util.Date().getTime());
+        
+        //connect to Integrtity servers
+        src.connectToIntegrity(	"admin","almalm",SERVER_DEST, "7001");
+        dest.connectToIntegrity("admin","almalm",SERVER_DEST, "7001");
+        String projectName = "/GenericSourceMigrator/project.pj";
+        String dirToFiles = "C:\\SourceMigratorTest\\src";
+        
+
+        //dest.createProject(projectName);
+        APIUtils.createSandbox(projectName, null, null, "C:\\SourceMigratorTest\\src");
+
+        List<Sandbox> sandboxes = APIUtils.getSandboxes(dirToFiles+"\\project.pj", null);
+        if (!sandboxes.isEmpty()) {
+        	dest.addMembersFromDir(dirToFiles, sandboxes.get(0).getName());
+            //dest.addMember("add", sandboxes.get(0), memberLocation, changePackageId)
+        }
+        
+
+        
+        
+
+        //migrateProject("/Migrated/SourceCode/GenericSourceMigrator/project.pj");
+        
+        /*
+        
+        //creating sandbox
+ 
+        System.out.println("dest sandboxes");
+        List<Sandbox> sandboxes = APIUtils.getSandboxes(null, null);
+        for (Sandbox sandbox : sandboxes) {
+        	System.out.println(sandbox);
+        }
+        
+ 
+        String projectName = "/SourceCode/GenericSourceMigrator/project.pj";
+        String sandboxPath = "c:\\sandboxes\\imported\\project.pj";
+        Sandbox sandbox;
+        if (!APIUtils.getSandboxes(projectName,null).isEmpty()) {
+        	for (Sandbox s : APIUtils.getSandboxes(projectName,null)) {
+        		if (s.getName().equals(sandboxPath)) {
+        			sandbox = s;
+        		}
+        	}
+        }
+
+       
+        Project migratedProject = null; 
+        Sandbox migratedSandbox = null;
+        String migratedPath = "/Migrated";
+        String migratedSandboxPath = "c:\\sandboxes\\migrated\\";
+                System.out.println("getting memers...");
+        List<Member> members = src.getMembers(sandboxPath+File.separator+"project.pj");
+        
+        if(!dest.getProjects(true, migratedPath+projectName).isEmpty()) {
+        	migratedProject = dest.getProjects(true, migratedPath+projectName).get(0);
+        }
+        /*
+        System.out.println("creating sandbox...");
+        src.createSandbox(projectName, null, null, sandboxPath);
+        
+
+        
+        System.out.println("creating project...");
+        dest.createProject(migratedPath+projectName);
+        
+
+
+        System.out.println("creating sandbox..."); 
+        dest.createSandbox(migratedProject.getName(), migratedProject.getBuildRevision(), migratedProject.getDevelopmentPath(),migratedSandboxPath);
+        
+        if (!dest.getSandboxes(migratedProject.getName(),null).isEmpty()) {
+        	migratedSandbox = dest.getSandboxes(migratedProject.getName(), null).get(0);
+        }
+       
+        System.out.println("coping files...");
+        try {
+			Utils.copyFolder(new File(sandboxPath), new File(migratedSandboxPath));
+			File f = new File(migratedSandboxPath+File.separator + "project.pj");
+			f.delete();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        
+        File importedDir, migratedDir;
+        importedDir = new File(sandboxPath);
+        migratedDir = new File(migratedSandboxPath);
+        
+        for (Member member : members) {
+        	File oldPath = new File(member.getName());
+        	
+        	String newPath = oldPath.getAbsolutePath().replace(importedDir.getAbsolutePath().toLowerCase(), migratedDir.getAbsolutePath().toLowerCase());
+        	member.setName(newPath);
+        	dest.addMember("desc", migratedSandbox.getName(), member.getName(), null);
+        }
+        
+        System.out.println("adding members to sanbox...");
+        System.out.println("checking in...");
+        
+        
+        List<Project> projects = dest.getProjects(false, null);
+        
+        List<String> projectNames = new LinkedList<String>();
+        for (Project project : projects) {
+        	projectNames.add(project.getName());
+        }
+  
+        if (!src.getProjects(true, "/SourceCode/GenericSourceMigrator/project.pj").isEmpty()) {
+            Project project = src.getProjects(true, "/SourceCode/GenericSourceMigrator/project.pj").get(0);
+            System.out.println(project);
+            dest.createProject("/SourceCode/GenericSourceMigrator/project.pj");
+           // dest.create
+        }
+        
+        		
+        //src.deleteProjects(projectNames);
+        
+        //dest.deleteProjects(projectNames);
+        
+        
+        
+    	//copyProject(project);
+    	//dest.createSandbox(project.getName(), project.getBuildRevision(), project.getDevelopmentPath());
+    	
+    	//Sandbox sandbox = src.getSandboxes(project.getName()).get(0);
+    	//List<Sandbox> sandboxes = dest.getSandboxes("/SourceCode/GenericSourceMigrator/project.pj");
+    	//Sandbox destSandbox = null;
+    	//if (!sandboxes.isEmpty()) {
+    	//	destSandbox = sandboxes.get(0);
+    	//}
+    	/*
+    	List<Member> members = src.getMembers(sandbox.getName());
+    	
+    	for (Member member : members) {
+        	dest.addMember(null, destSandbox.getName(), member.getName(), null);
+    	}
+        
+        /*
+        for (Project project : dest.getProjects()) {
+        	dest.dropProject(project.getName());
+        }
+        */
+        
+
+        
         /*
     	if( !checkProperties()) {
     		abortApp();
     	}
-	*/
+
        // String userName = readFromConsole("Enter User Name:");
     	//String password = readFromConsole("Enter your password:");
-    
-    	api.connectToIntegrity("admin","admin","localhost", "7001");
-    	List<Project> projects = api.getAllProjects();
-    	List<Sandbox> sandboxes = api.getAllSandboxes();
-    	api.dropSanboxes(sandboxes);
-    	sandboxes = api.getAllSandboxes();
-    	for (Sandbox sandbox : sandboxes) {
-    		System.out.println(sandbox);
+        Project project;
+        Sandbox sandbox;
+        List<Member> members = new LinkedList<Member>();
+
+    	//api.createProject("c:\\lalalala\\project.pj");
+    	
+    	project = src.getProjects(true, "/SourceCode/GenericSourceMigrator/project.pj").get(0);
+    	sandbox = src.getSandboxes(project.getName()).get(0);
+    	members = src.getMembers(sandbox.getName());
+    	
+    	System.out.println(sandbox);
+  
+    	
+    	//Project project = projects.get(0);
+    	//api.createSubProject(project.getName(), "c:\\subprojects\\project.pj");
+    	//api.createSandbox(project.getName(), project.getBuildRevision(), project.getDevelopmentPath());
+    	
+    	//api.createSandbox(sandboxDirectory, projectRevision, devPath)
+    	//api.dropSanboxes(sandboxes);
+    	
+
+    	//Sandbox sandbox = sandboxes.get(0);
+    	//api.checksInMembersOfSandbox(label, description, members)
+    	
+    	copyProject(project);
+    	dest.createSandbox(project.getName(), project.getBuildRevision(), project.getDevelopmentPath());
+    	
+    	for (Member member : members) {
+        	dest.addMember(null, sandbox.getName(), member.getName(), null);
     	}
-    	api.endSession();
+    	
+    	*/
+
+    	
+    	//System.out.println(project);
+    	//dest.createNewProject("c:\\temp\\myproject\\project.pj");
+    	
+    	
+    	
+    	src.endSession();
+    	dest.endSession();
     	
     	//exitAppSuccessfull();
+    }    
+    private static void migrateProject(String projectName) {
+    	Project projectImported, projectMigrated;
+    	Sandbox sandboxImported, sandboxMigrated;
+    	
+    	// Check if project exist on source server
+    	List<Project> projects = src.getProjects(true, projectName);
+    	if (!projects.isEmpty()) {
+    		l.info("Found "+projectName+" on " + src.getHostname());
+    		projectImported = projects.get(0);
+    		l.info(projectImported);
+    		
+    	} else {
+    		l.error("Project "+ projectName+ " not exists on " +src.getHostname());
+    		return;
+    	}
+    	
+    	// Create sandbox (if not exist) -> scr project
+    	List<Sandbox> sandboxesToSrc = APIUtils.getSandboxes(projectName, src.getHostname());
+
+    	if (sandboxesToSrc.size()>0) {
+        	l.info("Found " +sandboxesToSrc.size()+ " sandboxes point to " + projectName);
+    		for (Sandbox s : sandboxesToSrc) {
+    			l.info(s);
+    		}
+    		sandboxImported = sandboxesToSrc.get(0);
+    		
+    	} else {
+    		l.info("Not found any sanboxes pointing to " + projectName+ ". Creating new one");
+    		String sandboxname = projectName.replaceAll("/", "");
+    		sandboxImported = APIUtils.createSandbox(projectName, null, null, "c:\\sandboxes\\"+sandboxname);
+    		l.info(sandboxImported);
+    	}
+
+    	// Create project on destination server
+    	String appendix =  "/TEMP/Migrated";
+    	String migratedProjectName = appendix +"/project.pj";
+    	List<Project> destProjects = dest.getProjects(true, migratedProjectName);
+    	int i= 0;
+    	if (!destProjects.isEmpty()){
+	    	for ( ; true; i++) {
+	    		l.info("Already found project named "+migratedProjectName +" on "+src.getHostname()+" server");
+	    		destProjects = dest.getProjects(true, appendix+"_"+Integer.toString(i)+"/project.pj");
+	    		if (destProjects.isEmpty()) {
+	    			break;
+	    		}
+	    	}
+	    	migratedProjectName = appendix+"_"+Integer.toString(i)+"/project.pj";
+    		l.info("Creating new " + migratedProjectName);
+    		projectMigrated = dest.createProject(migratedProjectName);
+    	} else {
+    		l.info("Creating new " + migratedProjectName);
+    		projectMigrated = dest.createProject(migratedProjectName);
+    	}
+
+    	// Create sandbox -> new project
+    	sandboxMigrated = APIUtils.createSandbox(migratedProjectName, null, null, null);
+    	l.info("Sandbox to " +migratedProjectName + " has been created");
+    	l.info(sandboxMigrated);    	
+    	
+    	// Copy members to new project dir    	
+        
+        System.out.println("Coping files...");
+        try {
+			Utils.copyFolder(new File(sandboxImported.getName()), new File(sandboxMigrated.getName()));
+			File f = new File(sandboxImported.getName()+File.separator + "project.pj");
+			f.delete();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	
+    	// Add members to sandbox
+        l.info("Getting memers...");
+        List<Member> members = src.getMembers(sandboxImported.getName());
+        File importedDir, migratedDir;
+        importedDir = new File(sandboxImported.getName());
+        migratedDir = new File(sandboxMigrated.getName());
+        
+        for (Member member : members) {
+        	File oldPath = new File(member.getName());
+        	String newPath = oldPath.getAbsolutePath().replace(importedDir.getAbsolutePath().toLowerCase(), migratedDir.getAbsolutePath().toLowerCase());
+        	member.setName(newPath);
+        	dest.addMember("migrated", sandboxMigrated.getName(), member.getName(), null);
+        }
+        
+       
+
+        
+        // Drop importedSandbox, delete importedProject
+        l.info("Droping/removing sandbox and project");
+        List<Sandbox> sandboxedToDrop = new LinkedList<Sandbox>();
+        sandboxedToDrop.add(sandboxImported);
+        
+        List<String> projectToDelete = new LinkedList<String>();
+        projectToDelete.add(projectImported.getName());
+        
+    	APIUtils.dropSanboxes(sandboxedToDrop, "none");
+    	dest.dropProject(projectImported.getName());
+    	dest.deleteProjects(projectToDelete);
+        
+    	
+    }
+    
+    private static void copyProject(Project project) {
+    	if (project.getIsSubproject().equals("true")) {
+    		Project parent = src.getProjects(true, project.getParent()).get(0);
+    		copyProject(parent);
+    		dest.createSubProject(parent.getPath(), project.getName());
+    	} else {
+    		dest.createProject(project.getPath());
+    	}
     }
     
     private static String readFromConsole(String message){
@@ -123,7 +423,7 @@ public class App{
          try {
 			return br.readLine();
 		} catch (IOException e) {
-			log.error(e);
+			l.error(e);
 		}
 		return null;
 
@@ -132,7 +432,7 @@ public class App{
     public static void exitAppSuccessfull(){
 
     	System.out.println("Total time duration: " + Utils.timeDuration(mainStart)+"\nAll roll-out steps run successfully. Press enter to exit RICT");
-    	log.info("Total time duration: " + Utils.timeDuration(mainStart));
+    	l.info("Total time duration: " + Utils.timeDuration(mainStart));
     	try {
 			System.in.read();
 			System.exit(0);
@@ -150,7 +450,7 @@ public class App{
 	    
 	    File patchClient = new File(pathToPatchClient);
 	    if (!patchClient.exists() ){
-	    	log.error("PatchClient.exe not found under: "+pathToPatchClient );
+	    	l.error("PatchClient.exe not found under: "+pathToPatchClient );
 	    	abortApp();
 	    	return;
 	    }
@@ -162,7 +462,7 @@ public class App{
 	    	try {
 				WindowsUtils.startProcess(pathToPatchClient, "\""+hotfix.getAbsolutePath()+"\"", processWorkTimeLimit, processCheckInterval);
 			} catch (IOException e) {
-				log.error(e);
+				l.error(e);
 				abortApp();
 			}	    	
 	    }
@@ -173,7 +473,7 @@ public class App{
     
     public static void abortApp(){
     	System.out.println("Total time duration: " + Utils.timeDuration(mainStart)+"\nError occurred. Please check log file. Press enter to exit RICT");
-    	log.info("Total time duration: " + Utils.timeDuration(mainStart));
+    	l.info("Total time duration: " + Utils.timeDuration(mainStart));
     	try {
 			System.in.read();
 			System.exit(-1);
@@ -193,7 +493,7 @@ public class App{
 	    	String pathToProcess = oldClientDir;
 			File f = new File(pathToProcess);
 			if (!f.exists()){
-				log.error(f.getAbsolutePath() + " doesn't exist, uninstall abort");
+				l.error(f.getAbsolutePath() + " doesn't exist, uninstall abort");
 			}
 			
 			if (oldClientDir.contains("\\")) {
@@ -203,9 +503,9 @@ public class App{
 		    int numberOfProcesses = WindowsUtils.numberOfRunningProcesses(oldClientDir);
 		    if (numberOfProcesses > 0 ) {
 		    	if (numberOfProcesses == 1){
-		    		log.warn("find already running process "+ oldClientDir + " process will be terminated");
+		    		l.warn("find already running process "+ oldClientDir + " process will be terminated");
 		    	} else {
-		       		log.warn("find already running "+numberOfProcesses+" \""+ oldClientDir + "\" processes, all of them will be terminated");
+		       		l.warn("find already running "+numberOfProcesses+" \""+ oldClientDir + "\" processes, all of them will be terminated");
 		    	}
 		       	WindowsUtils.killProcess(oldClientDir);
 		    }    		
@@ -215,25 +515,25 @@ public class App{
 				String message = "[" + stop + "] Old Integrity Client was successful uninstalled. Time duration: " +Utils.timeDuration(start);
 				WindowsUtils.deleteFolder(new File(config.getString(PROPERTY_OLD_CLIENT_DIR)));
 				System.out.println(message);
-				log.info(message);
+				l.info(message);
 				
 			}else {
 				String message = "[" + stop + "] Error occurred while uninstalling Integrity Client. Time duration: " +Utils.timeDuration(start);
 				System.out.println(message);
-				log.error(message);
+				l.error(message);
 				abortApp(); //TODO uncomment
 			}
 		} catch (IOException e) {
-			log.error(e);
-			log.error("Please check if \""+PROPERTY_OLD_CLIENT_DIR+"\" property is properly set and points to OLD IntegrityClient dir");
+			l.error(e);
+			l.error("Please check if \""+PROPERTY_OLD_CLIENT_DIR+"\" property is properly set and points to OLD IntegrityClient dir");
 		}
 		
 		File oldClientDir = new File(config.getString(PROPERTY_OLD_CLIENT_DIR));
 		if (oldClientDir!= null && oldClientDir.isDirectory()) {
 			if (WindowsUtils.deleteFolder(oldClientDir)) {
-				log.info("Old client directory ["+oldClientDir.getAbsolutePath()+"] was removed");
+				l.info("Old client directory ["+oldClientDir.getAbsolutePath()+"] was removed");
 			} else {
-				log.warn("Cannot delete Old Client directory ["+oldClientDir.getAbsolutePath()+"]" );
+				l.warn("Cannot delete Old Client directory ["+oldClientDir.getAbsolutePath()+"]" );
 			}
 		}
     }
@@ -257,9 +557,9 @@ public class App{
     	    int numberOfProcesses = WindowsUtils.numberOfRunningProcesses(integrityInstallator);
     	    if (numberOfProcesses > 0 ) {
     	    	if (numberOfProcesses == 1){
-    	    		log.warn("find already running process "+ integrityInstallator + " process will be terminated");
+    	    		l.warn("find already running process "+ integrityInstallator + " process will be terminated");
     	    	} else {
-    	       		log.warn("find already running "+numberOfProcesses+" \""+ integrityInstallator + "\" processes, all of them will be terminated");
+    	       		l.warn("find already running "+numberOfProcesses+" \""+ integrityInstallator + "\" processes, all of them will be terminated");
     	       		
     	    	}
     	       	WindowsUtils.killProcess(integrityInstallator);
@@ -269,19 +569,20 @@ public class App{
     		if (WindowsUtils.checkExitCode() == 0){
     			String message = "[" + stop + "] New Integrity Client was successful installed. Time duration: " +Utils.timeDuration(start);
     			System.out.println(message);
-    			log.info(message);
+    			l.info(message);
     			
     		}else {
     			String message = "[" + stop + "] Error occurred while installing Integrity Client. Time duration: " +Utils.timeDuration(start);
     			System.out.println(message);
-    			log.error(message);
+    			l.error(message);
     			return;
     		}
 		} catch (IOException e) {
-			log.error(e);
-			log.error("Please check if \""+PROPERTY_NEW_CLIENT_INSTALLATOR_DIR+"\" property is properly set");
+			l.error(e);
+			l.error("Please check if \""+PROPERTY_NEW_CLIENT_INSTALLATOR_DIR+"\" property is properly set");
 		}
     }
+    
     
     private static void backUpMksDirs(){
     	File mks = new File(mksDir);
@@ -292,34 +593,34 @@ public class App{
     	File SIDistBackup = new File(appDir+File.separator+backupDir+File.separator+"SIDist");
     	
     	System.out.println("Backuping .mks, SIDist folders to " + appDir+File.separator+backupDir);
-    	log.info("Backuping .mks, SIDist folders to " + appDir+File.separator+backupDir);
+    	l.info("Backuping .mks, SIDist folders to " + appDir+File.separator+backupDir);
     	mksBackup.mkdirs();
     	SIDistBackup.mkdirs();
     	
     	if(mks.isDirectory()){
     		try {
 				Utils.copyFolder(mks, mksBackup);
-				log.info("Directory " +mks+" was copied to "+mksBackup);
+				l.info("Directory " +mks+" was copied to "+mksBackup);
 			} catch (IOException e) {
-				log.error(e);
+				l.error(e);
 				abortApp();
 				e.printStackTrace();
 			}
     	} else {
-    		log.error("Cannot find "+mks.getAbsolutePath() + " directory");
+    		l.error("Cannot find "+mks.getAbsolutePath() + " directory");
     	}
     	
     	if(sidist.isDirectory()){
     		try {
 				Utils.copyFolder(sidist, SIDistBackup);
-				log.info("Directory " +sidist+" was copied to "+SIDistBackup);
+				l.info("Directory " +sidist+" was copied to "+SIDistBackup);
 			} catch (IOException e) {
-				log.error(e);
+				l.error(e);
 				abortApp();
 				e.printStackTrace();
 			}
     	} else {
-    		log.error("Cannot find "+sidist.getAbsolutePath() + " directory");
+    		l.error("Cannot find "+sidist.getAbsolutePath() + " directory");
     	}
     	
     }
@@ -341,7 +642,7 @@ public class App{
 
 
     	if (!dir.isDirectory()) {
-    		log.error("Error while replacing hostnames and ports in viewsets directory. The directory " + dir.getAbsolutePath() + " doesn't exists");
+    		l.error("Error while replacing hostnames and ports in viewsets directory. The directory " + dir.getAbsolutePath() + " doesn't exists");
     		return;
     	}
     	
@@ -360,7 +661,7 @@ public class App{
 			    		   	if (hostMatcher.find()) {
 			    		   		String oldHostname = hostMatcher.group(1);
 			    		   		if (oldServerHostnames.contains(oldHostname)) {
-			    		   			log.info("Replacing hostname in file: " + viewset.getName() + "[OLD Value: "+line.trim() + " -> NEW Value: " + hostSetting+" ]");
+			    		   			l.info("Replacing hostname in file: " + viewset.getName() + "[OLD Value: "+line.trim() + " -> NEW Value: " + hostSetting+" ]");
 			    		   			line = hostSetting;
 			    		   		}
 			    		   	}
@@ -370,7 +671,7 @@ public class App{
 		    			tmpBw.flush();
 		    			tmpBw.close();
 		    		} catch (FileNotFoundException e){
-		    			log.error(e);
+		    			l.error(e);
 		    		} 
 		    		
 		    		viewset.delete();
@@ -408,7 +709,7 @@ public class App{
 		    	 		*/
 		    	}
     	} catch (IOException e) {
-    		log.error(e);
+    		l.error(e);
     	}
 
     }
@@ -420,20 +721,20 @@ public class App{
 		File mksprop = new File(installatorFolder + File.separator + "mksclient.properties");
 		
     	if (oldClientFolder.isDirectory()){
-    		log.info("Found old Client app directory [" + oldClientFolder.getAbsolutePath()+"]");
+    		l.info("Found old Client app directory [" + oldClientFolder.getAbsolutePath()+"]");
     	} else {
-    		log.error("Old Client app directory not found under [" + oldClientFolder.getAbsolutePath() +"]");
+    		l.error("Old Client app directory not found under [" + oldClientFolder.getAbsolutePath() +"]");
     		return false;
     	}
     	if (installatorFolder.isDirectory()) {
     		if (mksclient.exists()) {
-    			log.info("Found mksclinet.exe");
+    			l.info("Found mksclinet.exe");
     		} else {
-    			log.error("Can't find mksclient.exe in the specified folder ["+mksclient.getAbsolutePath()+"]");
+    			l.error("Can't find mksclient.exe in the specified folder ["+mksclient.getAbsolutePath()+"]");
     			return false;
     		}
     		if (mksprop.exists()) {
-    			log.info("Found mksclient.properties");
+    			l.info("Found mksclient.properties");
     			try {
 					clientInstallProp = new PropertiesConfiguration(mksprop);
 					newIntegrityClientDir = clientInstallProp.getString("USER_INSTALL_DIR");
@@ -441,10 +742,10 @@ public class App{
 					e.printStackTrace();
 				}
     		} else {
-    			log.error("Can't find mksclient.properties in the specified folder ["+mksprop.getAbsolutePath()+"]");
+    			l.error("Can't find mksclient.properties in the specified folder ["+mksprop.getAbsolutePath()+"]");
     		}
     	} else {
-    		log.error("Can't find the specified folder ["+installatorFolder.getAbsolutePath()+"] Please check property " + PROPERTY_NEW_CLIENT_INSTALLATOR_DIR);
+    		l.error("Can't find the specified folder ["+installatorFolder.getAbsolutePath()+"] Please check property " + PROPERTY_NEW_CLIENT_INSTALLATOR_DIR);
     		return false;
     	}
     	return true;

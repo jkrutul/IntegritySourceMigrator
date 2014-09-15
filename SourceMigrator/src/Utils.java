@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Timestamp;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -33,6 +36,34 @@ public class Utils {
 		}
 
 	}
+	
+	public static void printFiles(File dir) {
+		  Stack<File> stack = new Stack<File>();
+		  stack.push(dir);
+		  while(!stack.isEmpty()) {
+		    File child = stack.pop();
+		    if (child.isDirectory()) {
+		      for(File f : child.listFiles()) stack.push(f);
+		    } else if (child.isFile()) {
+		      System.out.println(child.getPath());
+		    }
+		  }
+		}
+	
+	public static List<File>  getListOfFiles(File dir) {
+		  Stack<File> stack = new Stack<File>();
+		  List<File> listOfPaths = new LinkedList<File>();
+		  stack.push(dir);
+		  while(!stack.isEmpty()) {
+		    File child = stack.pop();
+		    if (child.isDirectory()) {
+		      for(File f : child.listFiles()) stack.push(f);
+		    } else if (child.isFile()) {
+		      listOfPaths.add(new File(child.getPath()));
+		    }
+		  }
+		return listOfPaths;
+		}
 
 	public static void copyFolder(File src, File dest) throws IOException {
 
