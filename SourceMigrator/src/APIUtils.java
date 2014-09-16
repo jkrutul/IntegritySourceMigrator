@@ -32,6 +32,11 @@ import com.mks.api.util.APIVersion;
 
 
 public class APIUtils{
+	public static final String DELETION_POLICY_NONE= "none";
+	public static final String DELETION_POLICY_ALL= "all";
+	public static final String DELETION_POLICY_MEMBER= "member";
+	
+	
 	public static void exitIntegrityClient() throws InterruptedException{
     	try {
 			Process p = Runtime.getRuntime().exec("cmd /c im exit --noshutdown");
@@ -59,17 +64,24 @@ public class APIUtils{
 		
 	}
 	
+	/**
+	 * Adds all members from specified directory, except *.pj files
+	 * @param dir -- directory containing members, must be subdir of sandbox
+	 * @param sandbox -- sandbox where members will be added
+	 */
 	public void addMembersFromDir(String dir, String sandbox){
 		File memberDir = new File(dir);
-		if (memberDir.exists()) {
+		if (!memberDir.exists()) {
+			log.error("Directory " + memberDir+ " not exist");
 			return;
 		} 
 		
 		List<File> files = Utils.getListOfFiles(new File(dir));
 		for (File file : files) {
-			String filename[] = file.getName().split(".");
-			if (filename.length == 2) {
-				String extention = filename[1];
+			String filename = file.getName();
+			String extentionTab[] = filename.split("\\.");
+			if (extentionTab.length == 2) {
+				String extention = extentionTab[1];
 				if (!extention.equals("pj")) {
 					addMember(null, sandbox, file.getAbsolutePath(), null);
 				}
@@ -82,7 +94,10 @@ public class APIUtils{
 		Command cmd = new Command();
 		cmd.setApp(Command.SI);
 		cmd.setCommandName("add");
-		cmd.addOption(new Option("description", description));
+		if (description != null) {
+			cmd.addOption(new Option("description", description));			
+		}
+
 		cmd.addOption(new Option("sandbox", sandbox));
 		cmd.addSelection(memberLocation);
 		
@@ -90,8 +105,7 @@ public class APIUtils{
 			cmd.addOption(new Option("cpid", changePackageId));
 		}
 		
-	
-			runCommand(cmd, false);
+		runCommand(cmd, false);
 
 	}
 	
@@ -213,19 +227,18 @@ public class APIUtils{
 		//client integration
 		try {
 			clientCr = IntegrationPointFactory.getInstance().createLocalIntegrationPoint(MAJOR_VERSION, MINOR_VERSION).getCommonSession().createCmdRunner();
-
-		clientCr.setDefaultHostname(hostname);
-		clientCr.setDefaultUsername(userName);
-		clientCr.setDefaultPassword(password);
-		clientCr.setDefaultPort(Integer.parseInt(port));
-		
-		//server integration
-		serverCr = IntegrationPointFactory.getInstance().createIntegrationPoint(hostname, Integer.parseInt(port), MAJOR_VERSION, MINOR_VERSION).createSession(userName, password).createCmdRunner();
-		serverCr.setDefaultHostname(hostname);
-		serverCr.setDefaultUsername(userName);
-		serverCr.setDefaultPassword(password);
-		serverCr.setDefaultPort(Integer.parseInt(port));
-		
+			clientCr.setDefaultHostname(hostname);
+			clientCr.setDefaultUsername(userName);
+			clientCr.setDefaultPassword(password);
+			clientCr.setDefaultPort(Integer.parseInt(port));
+			
+			//server integration
+			serverCr = IntegrationPointFactory.getInstance().createIntegrationPoint(hostname, Integer.parseInt(port), MAJOR_VERSION, MINOR_VERSION).createSession(userName, password).createCmdRunner();
+			serverCr.setDefaultHostname(hostname);
+			serverCr.setDefaultUsername(userName);
+			serverCr.setDefaultPassword(password);
+			serverCr.setDefaultPort(Integer.parseInt(port));
+			
 		} catch (APIException e) {
 			e.printStackTrace();
 		}
@@ -253,13 +266,13 @@ public class APIUtils{
 		
 	}
 
-	public Project createProject(String projectLocation) {
+	public Project createProject(String projectName) {
 		Command cmd = new Command();
 		cmd.setApp(Command.SI);
 		cmd.setCommandName("createproject");
-		cmd.addSelection(projectLocation);
+		cmd.addSelection(projectName);
 		runCommand(cmd, true);
-		List<Project> projects =  getProjects(true,projectLocation);
+		List<Project> projects =  getProjects(true,projectName);
 		if (!projects.isEmpty()) {
 			return projects.get(0);
 		}
@@ -268,13 +281,56 @@ public class APIUtils{
 
 		
 	}
-
+	/***
+	 *  Crates new project on server, then creates sandbox in the specified folder and add all files
+	 * @param projectName - project name
+	 * @param projectRevision - project revision
+	 * @param devPath - development path
+	 * @param projectLocation - project location
+	 * @param addAllMembersFromProjectLocation - whether the files from project locatiion should be added to sandbox
+	 * @return null if error occured or Sandbox to new created project.
+	 */
+	public Sandbox createNewProjectAndSandbox(String projectName, String projectRevision,String devPath, String projectLocation, boolean addAllMembersFromProjectLocation) {
+		if (getProject(projectName)!=null) {
+			log.error("Project "+projectName+ " already exist on" +getHostname()+", creation aborted");
+			return null;
+		}
+		
+		Project project = createProject(projectName);
+		if (project != null) {
+			log.info("Project " + projectName + " has been created on " + getHostname());
+		} else {
+			log.error("Error occure when trying to create project "+projectName+" on "+getHostname());
+			return null;
+		}
+		
+		Sandbox sandbox = createSandbox(project.getName(), projectRevision, devPath, projectLocation);
+		if (sandbox != null) {
+			log.info("Sandbox " +sandbox.getName() + " -> "+sandbox.getProject()+ " has been created");
+		} else {
+			log.error("Error occure when creating sandbox");
+			return null;
+		}
+		if (addAllMembersFromProjectLocation) {
+	        addMembersFromDir(projectLocation, sandbox.getName());  
+		}
+		
+		return sandbox;
+		
+	}
+	
 	public static Sandbox createSandbox(String projectName, String projectRevision,String devPath, String location) {
 		Command cmd = new Command();
 		cmd.setApp(Command.SI);
 		cmd.setCommandName("createsandbox");
 		cmd.addOption(new Option("project", projectName));
-		cmd.addSelection(location);
+		
+		if (location != null) {
+			cmd.addSelection(location);
+		} else {
+			cmd.addSelection("c:\\ptc_temp\\sandboxes\\");
+			log.warn("Sandbox was created in default path");
+		}
 		
 		if (projectRevision != null) {
 			cmd.addOption(new Option("projectRevision", projectRevision));
@@ -320,6 +376,12 @@ public class APIUtils{
 
 	}
 
+	public void deleteProject(String projectName) {
+		LinkedList<String> projects = new LinkedList<String>();
+		projects.add(projectName);
+		deleteProjects(projects);
+	}
+	
 	public void deleteProjects(List<String> projectNames){
 		
 		for (String projectName : projectNames) {
@@ -391,16 +453,22 @@ public class APIUtils{
 		runCommand(cmd, true);
 		
 	}
+	
+	public static void dropSandbox(String sandbox, String deletionPolicy) {
+		LinkedList<String> ll = new LinkedList<String>();
+		ll.add(sandbox);
+		dropSanboxes(ll, deletionPolicy);
+	}
 
-	public static void dropSanboxes(List<Sandbox> sandboxes, String deletionPolicy){
+	public static void dropSanboxes(List<String> sandboxes, String deletionPolicy){
     	
-    	for (Sandbox sandbox : sandboxes) {
+    	for (String sandbox : sandboxes) {
     		Command cmd = new Command();
     		cmd.setApp(Command.SI);
     		cmd.setCommandName("dropsandbox");
     		cmd.addOption(new Option("yes"));
     		cmd.addOption(new Option("delete", deletionPolicy));
-    		cmd.addSelection(sandbox.getName());
+    		cmd.addSelection(sandbox);
 			
 			Response res = null;
 			try {
@@ -436,6 +504,11 @@ public class APIUtils{
 		return hostname;
 	}
 
+	/***
+	 * 
+	 * @param sandboxName - name of sandbox on client
+	 * @return list of members on the specified sandbox
+	 */
 	public List<Member> getMembers(String sandboxName) {
 		List<Member> listOfMembers = new LinkedList<Member>();
 		Map<String, String> options = new HashMap<String, String>();
@@ -455,11 +528,31 @@ public class APIUtils{
 		return port;
 	}
 
+	/***
+	 * Returns list of all projects
+	 * @return list of all projects on server
+	 */
 	public List<Project> getProjects() {
 		this.projects = getProjects(true, null);
 		return projects;
 	}
 	
+	public Project getProject(String projectName) {
+		Project project = null;
+		List<Project> projects = getProjects(true, projectName);
+    	if (!projects.isEmpty()) {
+    		project = projects.get(0);
+    	}
+    	
+		return project;
+	}
+	
+	/**
+	 * Return one project if projectName was specified or all projects if not.
+	 * @param displaySubprojects - if should include subprojects
+	 * @param projectName - project name
+	 * @return list of projects
+	 */
 	public List<Project> getProjects(boolean displaySubprojects, String projectName ) {
 		List<String> opts2 = new LinkedList<String>();
 		if (displaySubprojects) {
@@ -487,8 +580,7 @@ public class APIUtils{
 	public static List<Sandbox> getSandboxes(String project, String hostname) {
 		//Map<String, String> opt = new HashMap<String, String>();
 		List<Sandbox> sandboxes = new LinkedList<Sandbox>();
-		Command cmd = new Command(Command.SI);
-		cmd.addOption(new Option("sandboxes"));
+		Command cmd = new Command(Command.SI , "sandboxes");
 
 		String[] command = cmd.toStringArray();
 		String thecmd = "";
@@ -501,7 +593,9 @@ public class APIUtils{
 			response = clientCr.execute(cmd);
 			if (response != null) {
 				WorkItemIterator wii = response.getWorkItems();
-				while (wii.hasNext()) { 
+				while (wii.hasNext()) {
+					boolean addToList = true;
+					Sandbox sandbox = null;
 					Map<String, String> item = new HashMap<String, String>();
 					WorkItem wi = wii.next();
 					Iterator<Field> iterator = wi.getFields();
@@ -509,17 +603,27 @@ public class APIUtils{
 						Field field = iterator.next();
 						item.put(field.getName(), field.getValueAsString());	
 					}
-					if (hostname != null ) {
-						if (hostname.equals(new Sandbox(item).getServer())) {
-							sandboxes.add(new Sandbox(item));
+					sandbox = new Sandbox(item);
+					if (hostname != null) {
+						String sandboxHostname = sandbox.getServer().split(":")[0];
+						if (project != null) {
+							if (hostname.equals(sandboxHostname) && project.equals(sandbox.getProject()) ) {
+								sandboxes.add(sandbox);
+							}
+						} else if (hostname.equals(sandboxHostname)) {
+							sandboxes.add(sandbox);
+						}
+					} else if (project != null) {
+						if ( project.equals(sandbox.getProject())) {
+							sandboxes.add(sandbox);
 						}
 					} else {
-						sandboxes.add(new Sandbox(item));
+						sandboxes.add(sandbox);
 					}
 				}
 			}
 		} catch (APIException e) {
-			e.printStackTrace();
+			log.error(e);
 		}
 
 		return sandboxes;
