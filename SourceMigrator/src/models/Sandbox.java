@@ -111,5 +111,9 @@ public class Sandbox {
 	public void setBuildRevision(String buildRevision) {
 		this.buildRevision = buildRevision;
 	}
+	
+	public String getHostname() {
+		return getServer().split(":")[0];
+	}
 
 }

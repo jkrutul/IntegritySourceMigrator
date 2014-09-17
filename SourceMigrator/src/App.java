@@ -29,14 +29,7 @@ import org.apache.log4j.Logger;
 
 public class App{ //
 	public static final String PROPERTIES_FILE = "rict.properties";
-	public static final String PROPERTY_OLD_CLIENT_DIR = "OLD_CLIENT_DIR";
-	public static final String PROPERTY_NEW_CLIENT_INSTALLATOR_DIR = "NEW_CLIENT_INSTALL_APP_DIR";
-	public static final String PROPERTY_PROCESS_WORK_TIME_LIMIT = "WORKING_TIME_LIMIT_OF_PROCESS";
-	public static final String PROPERTY_PROCESS_CHECK_TIME_INTERVAL = "PROCESS_CHECK_INTERVAL";
-	public static final String PROPERTY_SERVER_HOSTNAME = "SERVER_HOSTNAME";
-	public static final String PROPERTY_SERVER_PORT = "SERVER_PORT";
-	public static final String PROPERTY_OLD_SERVER_HOSTNAMES = "OLD_SERVER_HOSTNAMES";
-	public static final String PROPERTY_HOTFIXES_DIR = "HOTFIXES_DIR";
+	
 	
 	public static final String SERVER_SRC = "192.168.153.29";
 	public static final String SERVER_DEST = "192.168.153.56";
@@ -46,13 +39,7 @@ public class App{ //
 	public static PropertiesConfiguration clientInstallProp;
 	
 	public static CompositeConfiguration config;
-	static final Logger l = LogManager.getLogger(App.class.getName());
-
-	private static int processWorkTimeLimit = 60*20;
-	private static int processCheckInterval = 10;
-	
-	private static List<Project> projects;
-	private static List<Sandbox> sandboxes;
+	private static final Logger l = LogManager.getLogger(App.class.getName());
 
 	
 	private static Timestamp mainStart;
@@ -85,20 +72,7 @@ public class App{ //
 				l.error("Configuration file: "+ f.getAbsoluteFile()+ " doesn't exist");
 			}
 		}
-		
-		processWorkTimeLimit = config.getInt(PROPERTY_PROCESS_WORK_TIME_LIMIT, 60*20);
-		processCheckInterval = config.getInt(PROPERTY_PROCESS_CHECK_TIME_INTERVAL, 4);
-		oldClientDir = config.getString(PROPERTY_OLD_CLIENT_DIR);
-		installAppDir = config.getString(PROPERTY_NEW_CLIENT_INSTALLATOR_DIR);
-		serverHostname = config.getString(PROPERTY_SERVER_HOSTNAME);
-		serverPort = config.getString(PROPERTY_SERVER_PORT);
-		List<Object> objects = config.getList(PROPERTY_OLD_SERVER_HOSTNAMES);
-		oldServerHostnames = new LinkedList<String>();
-		for (Object o : objects) {
-			oldServerHostnames.add((String)o);
-		}
-		hotfixesDir = config.getString(PROPERTY_HOTFIXES_DIR,installAppDir + File.separator+"hotfixes");
-		
+				
 		src = new APIUtils();
 		dest = new APIUtils();
 	
@@ -109,206 +83,30 @@ public class App{ //
         mainStart = new Timestamp(new java.util.Date().getTime());
         
         //connect to Integrtity servers
-        src.connectToIntegrity(	"admin","almalm",SERVER_DEST, "7001");
+        src.connectToIntegrity(	"admin","almalm",SERVER_SRC, "7001");
         dest.connectToIntegrity("admin","almalm",SERVER_DEST, "7001");
-        String projectToBeMigrated = "/16_09/Testing03/GenericSourceMigrator/project.pj";
+        String projectToBeMigrated = "/16_09/GenericSourceMigrator/project.pj";
         String dirToFiles = "C:\\projects\\testing\\16_09\\SOURCE";
+  /*            
+        APIUtils.dropAllSandboxes(APIUtils.DELETION_POLICY_ALL);
+        src.dropProject(projectToBeMigrated);
+        src.deleteProject(projectToBeMigrated);
+  
 
-
-        dest.createNewProjectAndSandbox(projectToBeMigrated, null, null, dirToFiles, true);
-       
+        src.dropProject(projectToBeMigrated);
+        src.deleteProject(projectToBeMigrated);
+        APIUtils.dropSandbox(dirToFiles, APIUtils.DELETION_POLICY_NONE);
+        
+        dest.dropAndDeleteAllProjects();
+   
+        src.createNewProjectAndSandbox(projectToBeMigrated, null, null, dirToFiles, true);
+   */    
         DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
         Calendar cal = Calendar.getInstance();
-        migrateProject(projectToBeMigrated, "C:\\sandboxes\\migrated\\" + dateFormat.format(cal.getTime()));
+        migrateProject(projectToBeMigrated, src.getHostname(), "C:\\sandboxes\\migrated\\" + dateFormat.format(cal.getTime()));
         
         
-        /*
-        
-        dest.dropSandbox(sandbox.getName(), APIUtils.DELETION_POLICY_NONE);
-        dest.dropProject(projectToBeMigrated);
-        dest.deleteProject(projectToBeMigrated);
-        */
-        
-/*
-        List<Sandbox> sandboxes = APIUtils.getSandboxes(dirToFiles+"\\project.pj", null);
-        if (!sandboxes.isEmpty()) {
-        	dest.addMembersFromDir(dirToFiles, sandboxes.get(0).getName());
-            //dest.addMember("add", sandboxes.get(0), memberLocation, changePackageId)
-        }
-  */      
-
-        
-        
-
-        //migrateProject("/Migrated/SourceCode/GenericSourceMigrator/project.pj");
-        
-        /*
-        
-        //creating sandbox
- 
-        System.out.println("dest sandboxes");
-        List<Sandbox> sandboxes = APIUtils.getSandboxes(null, null);
-        for (Sandbox sandbox : sandboxes) {
-        	System.out.println(sandbox);
-        }
-        
- 
-        String projectName = "/SourceCode/GenericSourceMigrator/project.pj";
-        String sandboxPath = "c:\\sandboxes\\imported\\project.pj";
-        Sandbox sandbox;
-        if (!APIUtils.getSandboxes(projectName,null).isEmpty()) {
-        	for (Sandbox s : APIUtils.getSandboxes(projectName,null)) {
-        		if (s.getName().equals(sandboxPath)) {
-        			sandbox = s;
-        		}
-        	}
-        }
-
-       
-        Project migratedProject = null; 
-        Sandbox migratedSandbox = null;
-        String migratedPath = "/Migrated";
-        String migratedSandboxPath = "c:\\sandboxes\\migrated\\";
-                System.out.println("getting memers...");
-        List<Member> members = src.getMembers(sandboxPath+File.separator+"project.pj");
-        
-        if(!dest.getProjects(true, migratedPath+projectName).isEmpty()) {
-        	migratedProject = dest.getProjects(true, migratedPath+projectName).get(0);
-        }
-        /*
-        System.out.println("creating sandbox...");
-        src.createSandbox(projectName, null, null, sandboxPath);
-        
-
-        
-        System.out.println("creating project...");
-        dest.createProject(migratedPath+projectName);
-        
-
-
-        System.out.println("creating sandbox..."); 
-        dest.createSandbox(migratedProject.getName(), migratedProject.getBuildRevision(), migratedProject.getDevelopmentPath(),migratedSandboxPath);
-        
-        if (!dest.getSandboxes(migratedProject.getName(),null).isEmpty()) {
-        	migratedSandbox = dest.getSandboxes(migratedProject.getName(), null).get(0);
-        }
-       
-        System.out.println("coping files...");
-        try {
-			Utils.copyFolder(new File(sandboxPath), new File(migratedSandboxPath));
-			File f = new File(migratedSandboxPath+File.separator + "project.pj");
-			f.delete();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-        
-        File importedDir, migratedDir;
-        importedDir = new File(sandboxPath);
-        migratedDir = new File(migratedSandboxPath);
-        
-        for (Member member : members) {
-        	File oldPath = new File(member.getName());
-        	
-        	String newPath = oldPath.getAbsolutePath().replace(importedDir.getAbsolutePath().toLowerCase(), migratedDir.getAbsolutePath().toLowerCase());
-        	member.setName(newPath);
-        	dest.addMember("desc", migratedSandbox.getName(), member.getName(), null);
-        }
-        
-        System.out.println("adding members to sanbox...");
-        System.out.println("checking in...");
-        
-        
-        List<Project> projects = dest.getProjects(false, null);
-        
-        List<String> projectNames = new LinkedList<String>();
-        for (Project project : projects) {
-        	projectNames.add(project.getName());
-        }
-  
-        if (!src.getProjects(true, "/SourceCode/GenericSourceMigrator/project.pj").isEmpty()) {
-            Project project = src.getProjects(true, "/SourceCode/GenericSourceMigrator/project.pj").get(0);
-            System.out.println(project);
-            dest.createProject("/SourceCode/GenericSourceMigrator/project.pj");
-           // dest.create
-        }
-        
-        		
-        //src.deleteProjects(projectNames);
-        
-        //dest.deleteProjects(projectNames);
-        
-        
-        
-    	//copyProject(project);
-    	//dest.createSandbox(project.getName(), project.getBuildRevision(), project.getDevelopmentPath());
-    	
-    	//Sandbox sandbox = src.getSandboxes(project.getName()).get(0);
-    	//List<Sandbox> sandboxes = dest.getSandboxes("/SourceCode/GenericSourceMigrator/project.pj");
-    	//Sandbox destSandbox = null;
-    	//if (!sandboxes.isEmpty()) {
-    	//	destSandbox = sandboxes.get(0);
-    	//}
-    	/*
-    	List<Member> members = src.getMembers(sandbox.getName());
-    	
-    	for (Member member : members) {
-        	dest.addMember(null, destSandbox.getName(), member.getName(), null);
-    	}
-        
-        /*
-        for (Project project : dest.getProjects()) {
-        	dest.dropProject(project.getName());
-        }
-        */
-        
-
-        
-        /*
-    	if( !checkProperties()) {
-    		abortApp();
-    	}
-
-       // String userName = readFromConsole("Enter User Name:");
-    	//String password = readFromConsole("Enter your password:");
-        Project project;
-        Sandbox sandbox;
-        List<Member> members = new LinkedList<Member>();
-
-    	//api.createProject("c:\\lalalala\\project.pj");
-    	
-    	project = src.getProjects(true, "/SourceCode/GenericSourceMigrator/project.pj").get(0);
-    	sandbox = src.getSandboxes(project.getName()).get(0);
-    	members = src.getMembers(sandbox.getName());
-    	
-    	System.out.println(sandbox);
-  
-    	
-    	//Project project = projects.get(0);
-    	//api.createSubProject(project.getName(), "c:\\subprojects\\project.pj");
-    	//api.createSandbox(project.getName(), project.getBuildRevision(), project.getDevelopmentPath());
-    	
-    	//api.createSandbox(sandboxDirectory, projectRevision, devPath)
-    	//api.dropSanboxes(sandboxes);
-    	
-
-    	//Sandbox sandbox = sandboxes.get(0);
-    	//api.checksInMembersOfSandbox(label, description, members)
-    	
-    	copyProject(project);
-    	dest.createSandbox(project.getName(), project.getBuildRevision(), project.getDevelopmentPath());
-    	
-    	for (Member member : members) {
-        	dest.addMember(null, sandbox.getName(), member.getName(), null);
-    	}
-    	
-    	*/
-
-    	
-    	//System.out.println(project);
-    	//dest.createNewProject("c:\\temp\\myproject\\project.pj");
-    	
-    	
-    	
+     
     	src.endSession();
     	dest.endSession();
     	
@@ -320,13 +118,14 @@ public class App{ //
      * @param projectName -- project name to be migrated
      * @param migratedProjectLocation -- location on destination server, where project will be saved
      */
-    private static void migrateProject(String projectName, String migratedProjectLocation) {
+    private static void migrateProject(String projectName, String hostname, String migratedProjectLocation) {
     	Project projectImported, projectMigrated;
     	Sandbox sandboxImported, sandboxMigrated;
 
-    	if ( src.getProject(projectName) != null ) {
+    	projectImported= src.getProject(projectName);
+    	
+    	if ( projectImported != null ) {
     		l.info("Found "+projectName+" on " + src.getHostname());
-    		projectImported = projects.get(0);
     		l.info(projectImported);
     		
     	} else {
@@ -334,8 +133,8 @@ public class App{ //
     		return;
     	}
     	
-    	// Create sandbox (if not exist) -> scr project
-    	List<Sandbox> sandboxesToSrc = APIUtils.getSandboxes(projectName, src.getHostname());
+    	// Create sandbox (if not exist) -> imported project
+    	List<Sandbox> sandboxesToSrc = APIUtils.getSandboxes(projectImported.getName(), src.getHostname());
 
     	if (sandboxesToSrc.size()>0) {
         	l.info("Found " +sandboxesToSrc.size()+ " sandboxes point to " + projectName);
@@ -346,8 +145,8 @@ public class App{ //
     		
     	} else {
     		l.info("Not found any sanboxes pointing to " + projectName+ ". Creating new one");
-    		String sandboxname = projectName.replaceAll("/", "");
-    		sandboxImported = APIUtils.createSandbox(projectName, null, null, "c:\\sandboxes\\"+sandboxname);
+    		String sandboxname = new File(projectName).getParent();
+    		sandboxImported = APIUtils.createSandbox(projectName, hostname, null, null, "c:\\sandboxes\\"+sandboxname);
     		l.info(sandboxImported);
     	}
 
@@ -372,7 +171,7 @@ public class App{ //
     	}
 
     	// Create sandbox -> migrated project
-    	sandboxMigrated = APIUtils.createSandbox(migratedProjectName, null, null, migratedProjectLocation);
+    	sandboxMigrated = APIUtils.createSandbox(migratedProjectName, dest.getHostname(), null, null, migratedProjectLocation);
     	l.info("Sandbox to " +migratedProjectName + " has been created");
     	l.info(sandboxMigrated);    	
     	
@@ -390,13 +189,13 @@ public class App{ //
     	
     	// Add members to migrated sandbox
         l.info("Getting memers...");
-        List<Member> members = src.getMembers(sandboxImported.getName());
+        List<Member> members = src.getMembers(sandboxImported.getName(), sandboxImported.getHostname());
         
         for (Member member : members) {
         	File oldPath = new File(member.getName());
-        	String newPath = oldPath.getAbsolutePath().replace(importedDir.toLowerCase(), migratedDir.toLowerCase());
+        	String newPath = oldPath.getAbsolutePath().replace(importedDir, migratedDir);
         	member.setName(newPath);
-        	dest.addMember("migrated", sandboxMigrated.getName(), member.getName(), null);
+        	dest.addMember("migrated", sandboxMigrated.getName(), sandboxMigrated.getHostname(), member.getName(), null);
         }
 
         // Drop importedSandbox, delete importedProject
