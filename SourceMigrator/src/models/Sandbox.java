@@ -42,7 +42,7 @@ public class Sandbox {
 				setServer(value);
 			} else if (field.equals(fieldNames[5])) {
 				setDevelopmentPath(value);
-			} else if (field.equals(fieldNames[5])) {
+			} else if (field.equals(fieldNames[6])) {
 				setBuildRevision(value);
 			}
 		}

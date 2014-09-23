@@ -87,7 +87,23 @@ public class App{ //
         dest.connectToIntegrity("admin","almalm",SERVER_DEST, "7001");
         String projectToBeMigrated = "/16_09/GenericSourceMigrator/project.pj";
         String dirToFiles = "C:\\projects\\testing\\16_09\\SOURCE";
-  /*            
+        
+        List<Sandbox> sandboxes = APIUtils.getSandboxes("/TEMP/Migrated_11/project.pj", null);
+        Sandbox sandbox = null;
+        if (!sandboxes.isEmpty()){
+        	sandbox = sandboxes.get(0);
+        }
+        
+        List<Member> members = src.getMembers(sandbox.getName(), dest.getHostname());
+        Member member = members.get(0);
+        //member.get
+        //APIUtils.addLabel("prototype2", members, null, null, null, null);
+        
+        src.viewhistory(member.getName(), sandbox.getName(), null, null);
+        
+        //dest.viewRevision("c:\\sandboxes\\migrated\\2014_09_16_16_32_05\\Utils.java", null, "c:\\sandboxes\\migrated\\2014_09_16_16_32_05\\project.pj",null);
+        dest.memberInfo("c:\\sandboxes\\migrated\\2014_09_16_16_32_05\\Utils.java", "/TEMP/Migrated_11/project.pj");
+        /*            
         APIUtils.dropAllSandboxes(APIUtils.DELETION_POLICY_ALL);
         src.dropProject(projectToBeMigrated);
         src.deleteProject(projectToBeMigrated);

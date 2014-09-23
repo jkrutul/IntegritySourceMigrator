@@ -37,13 +37,12 @@ public class APIUtils{
 	public static final String DELETION_POLICY_NONE= "none";
 	public static final String DELETION_POLICY_ALL= "all";
 	public static final String DELETION_POLICY_MEMBER= "member";
+		
 	private static final Logger log = LogManager.getLogger(APIUtils.class.getName());
 	private String hostname, username, password;
 	private int port;
 	private List<Project> projects;
 	private static CmdRunner clientCr;
-	
-	
 	private CmdRunner serverCr;
 	
 	public static Sandbox createSandbox(String projectName, String hostname, String projectRevision,String devPath, String location) {
@@ -148,6 +147,22 @@ public class APIUtils{
 			log.error(e1);
 		}
     }
+	
+	public static List<Sandbox> getAllSandboxes() {
+		return getSandboxes(null, null);
+	}
+	 
+	public static Sandbox getSandbox(String sandboxName) {
+		List<Sandbox> all = getAllSandboxes();
+		
+		for (Sandbox sandbox : all) {
+			if (sandbox.getName().equals(sandboxName)) {
+				return sandbox;
+			}
+		}
+		return null;
+	}
+	
 	public static List<Sandbox> getSandboxes(String project, String hostname) {
 		//Map<String, String> opt = new HashMap<String, String>();
 		List<Sandbox> sandboxes = new LinkedList<Sandbox>();
@@ -205,9 +220,8 @@ public class APIUtils{
 	public APIUtils() {
 	
 	}
-     
     
-	public static void addLabel(String label, List<String> members, String sandbox, String project, String hostname) {
+	public static void addLabel(String label, List<Member> members, String sandbox, String project, String hostname, String projectRev) {
 		Command cmd = new Command();
 		cmd.setApp(Command.SI);
 		cmd.setCommandName("addlabel");
@@ -216,23 +230,37 @@ public class APIUtils{
 		if (sandbox != null) {
 			cmd.addOption(new Option("sandbox", sandbox));
 		}
-		
 		if (project != null) {
 			cmd.addOption(new Option("project", project));
 		}
-		
 		if (hostname != null) {
 			cmd.addOption(new Option("hostname", hostname));
 		}
 		
-		for (String member : members) {
-			cmd.addSelection(member);
+		if (projectRev != null) {
+			cmd.addOption(new Option("projectRevision", projectRev));
 		}
 		
-		//runCommand(cmd, false);
+		for (Member member : members) {
+			cmd.addSelection(member.getName());
+		}
+		Response res = null;
+		try {
+			// Human readable version of the command for logging purposes
+			String[] command = cmd.toStringArray();
+			String thecmd = "";
+			for (int i = 0; i < command.length; i++) {
+				thecmd = thecmd + " " + command[i];
+			}
+			log.info(thecmd);
+			res = clientCr.execute(cmd);
+
+		
+		} catch (APIException e) {
+			log.error(e);
+		}
 	}
-    
-	
+
 	public void addMember(String description, String sandbox, String hostname, String memberLocation, String changePackageId) {
 		Command cmd = new Command();
 		cmd.setApp(Command.SI);
@@ -254,11 +282,10 @@ public class APIUtils{
 	}
     
     public void addMemberAttr() {
-		// TODO Auto-generated method stub
+		
 		
 	}
-    
-    
+
 	public void addMemberFromArchive() {
 		// TODO Auto-generated method stub
 		
@@ -329,19 +356,92 @@ public class APIUtils{
 
 	}
 	
-	public void addProjectLabel() {
-		// TODO Auto-generated method stub
-		
+	public void addProjectLabel(String label, String project) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("addprojectlabel");
+		cmd.addOption(new Option("project", project));
+		cmd.addOption(new Option("label", label));
+		runCommand(cmd, true);
+	}
+	
+	public static void addSandboxAttr(String sandbox, String attrKey, String attrVal) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("addsandboxattr");
+		cmd.addOption(new Option("sandbox", sandbox));
+		MultiValue mv = new MultiValue("=");
+		mv.add(attrKey);
+		mv.add(attrVal);
+		cmd.addOption(new Option("attribute", mv));
+		Response res = null;
+		try {
+			// Human readable version of the command for logging purposes
+			String[] command = cmd.toStringArray();
+			String thecmd = "";
+			for (int i = 0; i < command.length; i++) {
+				thecmd = thecmd + " " + command[i];
+			}
+			log.info(thecmd);
+			res = clientCr.execute(cmd);
+		} catch (APIException e) {
+			log.error(e);
+		}
 	}
 
-	public void addProjectMetric() {
+	public void appendCheckpointDesc(String projectRev, String description, String project) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("appendcheckpointdesc");
+		cmd.addOption(new Option("projectRevison", projectRev));
+		cmd.addOption(new Option("description", description));
+		cmd.addOption(new Option("project", project));
+		runCommand(cmd, true);		
+	}
+	
+	public static void  deleteLabel(String label, String member, String project, String sandbox, String projectRevision) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("deletelabel");
+		cmd.addOption(new Option("label", label));
+		
+		if(sandbox != null) {
+			cmd.addOption(new Option("sandbox", sandbox));
+		}
+		if (project != null) {
+			cmd.addOption(new Option("project", project));
+		}
+		if (projectRevision != null) {
+			cmd.addOption(new Option("projectRevision", projectRevision));
+		}
+		
+		cmd.addSelection(member);
+		Response res = null;
+		try {
+			// Human readable version of the command for logging purposes
+			String[] command = cmd.toStringArray();
+			String thecmd = "";
+			for (int i = 0; i < command.length; i++) {
+				thecmd = thecmd + " " + command[i];
+			}
+			log.info(thecmd);
+			res = clientCr.execute(cmd);
+		} catch (APIException e) {
+			log.error(e);
+		}		
+	}
+	
+	public static void createMetricInfo(String name, String description) {
+		
+	}
+	
+ 	public void addProjectMetric() {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	public void addSubproject() {
-		// TODO Auto-generated method stub
-		
+	
 	}
 	
 	public void checkOutMembers(List<String> members, String sandbox){
@@ -379,6 +479,7 @@ public class APIUtils{
 
 		
 	}
+	
 	public void connectToIntegrity(String userName, String password, String hostname, String port){
 		this.username = userName;
 		this.password = password;
@@ -431,7 +532,6 @@ public class APIUtils{
 		
 	}
 
-	
 	/***
 	 *  Crates new project on server, then creates sandbox in the specified folder and add all files
 	 * @param projectName - project name
@@ -496,7 +596,50 @@ public class APIUtils{
 			runCommand(cmd, true);
 
 	}
-
+	
+	public void viewhistory(String member, String sandbox, String devPath, String projectRev) {
+		Map<String, String> options = new HashMap<String, String>();
+		if (sandbox != null) {
+			options.put("sandbox", sandbox);			
+		}
+		if (devPath != null) {
+			options.put("devpath", devPath);
+		}
+		if (projectRev != null) {
+			options.put("projectRevision", projectRev);
+		}		
+		List<Map<String, String>> siElements = getSIItems("viewhistory", options, null, member, false);
+		
+		for (Map<String, String> siElement : siElements) {
+			for (String key : siElement.keySet()) {
+				log.info("key= "+key+" value= " +siElement.get(key));
+			}
+		}
+		
+	}
+	
+	public void viewRevision(String member, String revision, String sandbox, String project) {
+		Map<String, String> options = new HashMap<String, String>();
+		if (sandbox != null)
+			options.put("sandbox", sandbox);
+		if (revision != null)
+			options.put("revision", revision);
+		if (project != null)
+			options.put("project", project);
+		if (hostname != null) {
+			options.put("hostname", hostname);
+		} else {
+			options.put("hostname", getHostname());
+		}
+		
+		List<Map<String, String>> contents = getSIItems("viewrevision", options, null, member, false);
+		for( Map<String, String> content : contents) {
+			for (String key : content.keySet()) {
+				log.info("key: " + key + " val: "+ content.get(key));
+			}
+		}
+	}
+	
 	public void deleteProject(String projectName) {
 		LinkedList<String> projects = new LinkedList<String>();
 		projects.add(projectName);
@@ -549,6 +692,33 @@ public class APIUtils{
 		}
 	}
 	
+	public void deleteRevision(String range, String member) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("deleterevision");
+		cmd.addOption(new Option("range", range));
+		cmd.addOption(new Option("confirm"));
+		cmd.addOption(new Option("confirminuse"));
+		cmd.addSelection(member);
+		runCommand(cmd, true);
+		
+	}
+	
+	public void demoteProject(String project, String state) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("demoteproject");
+		if (state != null) {
+			cmd.addOption(new Option("state", state));
+		}
+		cmd.addOption(new Option("project",project));
+		runCommand(cmd, true);
+	}
+	
+	public static void diffFiles(String file1, String file2) {
+		
+	}
+	
 	public void displayData() {
 		getProjects();
 		  for(Project project : projects) {
@@ -574,6 +744,38 @@ public class APIUtils{
 	
 	}
 
+	public void dropDevPath(String project, String devPath) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("dropdevpath");
+		cmd.addOption(new Option("forceconfirm", "yes"));
+		cmd.addOption(new Option("project", project));
+		cmd.addOption(new Option("devpath", devPath));
+		runCommand(cmd, true);
+	}
+	
+	public void dropProjectAttr(String attrKey, String attrVal, String project) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("dropprojectattr");
+		cmd.addOption(new Option("attribute", attrKey +"="+attrVal));
+		runCommand(cmd, true);
+	}
+
+	public void freezMember(String member, String project, String sandbox) {
+		Command cmd = new Command();
+		cmd.setApp(Command.SI);
+		cmd.setCommandName("freeze");
+		if (project != null) {
+			cmd.addOption(new Option("project",project));
+		}
+		if (sandbox != null) {
+			cmd.addOption(new Option("sandbox", sandbox));
+		}
+		cmd.addSelection(member);
+		runCommand(cmd, true);
+	}
+	
 	public void dropProject(String projectName){
 		Command cmd = new Command();
 		cmd.setApp(Command.SI);
@@ -583,6 +785,12 @@ public class APIUtils{
 		
 		runCommand(cmd, true);
 		
+	}
+	
+	public void memberInfo(String member, String project) {
+		Map<String,String> options = new HashMap<String, String>();
+		options.put("project", project);
+		getSIItem("memberinfo", options, null, member, true);
 	}
 
 	public void endSession(){
@@ -608,7 +816,11 @@ public class APIUtils{
 		List<Member> listOfMembers = new LinkedList<Member>();
 		Map<String, String> options = new HashMap<String, String>();
 		options.put("sandbox", sandboxName);
-		options.put("hostname", hostname);
+		if (hostname != null) {
+			options.put("hostname", hostname);
+		} else {
+			options.put("hostname", getHostname());
+		}
 		List<Map<String, String>> membersPrefs  = getSIItems("viewsandbox", options,null,null, false);
 		for (Map<String,String> memberPrefs : membersPrefs) {
 			listOfMembers.add(new Member(memberPrefs));
@@ -630,7 +842,6 @@ public class APIUtils{
     	if (!projects.isEmpty()) {
     		project = projects.get(0);
     	}
-    	
 		return project;
 	}
 	
@@ -673,6 +884,14 @@ public class APIUtils{
 		return projects;
 	}
 
+	private Map<String,String> getSIItem(String commandName, Map<String,String> options, List<String> options2, String selection, boolean onServer) {
+		List<Map<String, String>> items = getSIItems(commandName, options, options2, selection, onServer);
+		if (!items.isEmpty()) {
+			return getSIItems(commandName, options, options2, selection, onServer).get(0);
+		} 
+		return null;
+	}
+	
 	private List<Map<String, String>> getSIItems(String commandName, Map<String,String> options, List<String> options2, String selection, boolean onServer) {
 
 		List<Map<String, String>> items = new LinkedList<>();
@@ -815,7 +1034,6 @@ public class APIUtils{
 	public void setProjects(List<Project> projects) {
 		this.projects = projects;
 	}
-	
 	
 	public void setUsername(String username) {
 		this.username = username;
