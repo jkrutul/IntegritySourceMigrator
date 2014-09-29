@@ -1,4 +1,4 @@
-package models;
+package com.ptc.sourcemigrator.models;
 
 public class ChangePackage {
 	private static final String CP_STATE_OPEN = "open";

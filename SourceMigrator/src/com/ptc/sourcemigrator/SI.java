@@ -1,6 +1,7 @@
+package com.ptc.sourcemigrator;
 import java.util.List;
 
-import models.Member;
+import com.ptc.sourcemigrator.models.Member;
 
 
 public interface SI {

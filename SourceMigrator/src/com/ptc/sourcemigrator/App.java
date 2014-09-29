@@ -1,3 +1,4 @@
+package com.ptc.sourcemigrator;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,16 +17,17 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import models.Member;
-import models.Project;
-import models.Sandbox;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+
+import com.ptc.sourcemigrator.database.Database;
+import com.ptc.sourcemigrator.models.Member;
+import com.ptc.sourcemigrator.models.Project;
+import com.ptc.sourcemigrator.models.Sandbox;
 
 public class App{ //
 	public static final String PROPERTIES_FILE = "rict.properties";
@@ -85,6 +87,25 @@ public class App{ //
         //connect to Integrtity servers
         src.connectToIntegrity(	"admin","almalm",SERVER_SRC, "7001");
         dest.connectToIntegrity("admin","almalm",SERVER_DEST, "7001");
+        Database db = new Database();
+        
+        List<Project> projects = dest.getProjects();
+        for (Project project : projects) {
+        	Database.insertProject(project);
+        }
+        
+        projects = Database.getProjectsData();
+        for (Project project : projects) {
+        	System.out.println(project);
+        }
+        
+        
+     
+        
+        
+        
+        /*
+
         String projectToBeMigrated = "/16_09/GenericSourceMigrator/project.pj";
         String dirToFiles = "C:\\projects\\testing\\16_09\\SOURCE";
         
@@ -103,6 +124,8 @@ public class App{ //
         
         //dest.viewRevision("c:\\sandboxes\\migrated\\2014_09_16_16_32_05\\Utils.java", null, "c:\\sandboxes\\migrated\\2014_09_16_16_32_05\\project.pj",null);
         dest.memberInfo("c:\\sandboxes\\migrated\\2014_09_16_16_32_05\\Utils.java", "/TEMP/Migrated_11/project.pj");
+        
+         */
         /*            
         APIUtils.dropAllSandboxes(APIUtils.DELETION_POLICY_ALL);
         src.dropProject(projectToBeMigrated);
@@ -119,7 +142,7 @@ public class App{ //
    */    
         DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
         Calendar cal = Calendar.getInstance();
-        migrateProject(projectToBeMigrated, src.getHostname(), "C:\\sandboxes\\migrated\\" + dateFormat.format(cal.getTime()));
+        //migrateProject(projectToBeMigrated, src.getHostname(), "C:\\sandboxes\\migrated\\" + dateFormat.format(cal.getTime()));
         
         
      

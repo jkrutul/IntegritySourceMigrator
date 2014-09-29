@@ -1,3 +1,4 @@
+package com.ptc.sourcemigrator;
 
 
 import java.awt.image.SampleModel;
@@ -8,10 +9,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import models.Member;
-import models.Project;
-import models.Sandbox;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -30,6 +27,9 @@ import com.mks.api.response.Response;
 import com.mks.api.response.WorkItem;
 import com.mks.api.response.WorkItemIterator;
 import com.mks.api.util.APIVersion;
+import com.ptc.sourcemigrator.models.Member;
+import com.ptc.sourcemigrator.models.Project;
+import com.ptc.sourcemigrator.models.Sandbox;
 
 
 public class APIUtils{
@@ -914,7 +914,6 @@ public class APIUtils{
 		if (selection != null) {
 			cmd.addSelection(selection);
 		}
-
 		
 		try {
 			Response response = runCommand(cmd, onServer);

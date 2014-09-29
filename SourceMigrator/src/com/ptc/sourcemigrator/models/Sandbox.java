@@ -1,4 +1,4 @@
-package models;
+package com.ptc.sourcemigrator.models;
 
 import java.util.Map;
 
