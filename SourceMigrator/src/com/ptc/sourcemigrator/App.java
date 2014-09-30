@@ -89,14 +89,20 @@ public class App{ //
         dest.connectToIntegrity("admin","almalm",SERVER_DEST, "7001");
         Database db = new Database();
         
-        List<Project> projects = dest.getProjects();
+        List<Project> projects = dest.getProjects(true,null);
         for (Project project : projects) {
-        	Database.insertProject(project);
+        	db.insertProject(project);
         }
+        Sandbox calcSandbox= APIUtils.getSandboxes("/Calculator/project.pj", SERVER_DEST).get(0);
+        List<Member> members = dest.getMembers(calcSandbox.getName(), SERVER_DEST);
         
-        projects = Database.getProjectsData();
+        
+        
+        projects = db.getProjectsData();
+       
         for (Project project : projects) {
         	System.out.println(project);
+        	System.out.println(db.getProjectId(project.getName()));
         }
         
         

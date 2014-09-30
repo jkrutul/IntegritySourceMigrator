@@ -3,8 +3,35 @@ package com.ptc.sourcemigrator.models;
 import java.util.Map;
 
 public class Member {
-	private String name, parent, type, memberRev, memberRevLocedByMe, workingRevLockedByMe, lockrecord, wfdelta, revsyncDelta, newRevDelta, merge, canonicalSandbox,canonicalMember,projectDevpath;
-	private static final String[] fieldNames = {"name",	"parent","type","memberrev","memberrevlockedbyme","workingrevlockedbyme","lockrecord", "wfdelta","revsyncdelta","newrevdelta","merge","canonicalSandbox", "canonicalMember","projectDevpath"};
+	private String 	name, memberName, parent, type, memberRev,
+					memberRevLocedByMe, workingRevLockedByMe,
+					lockrecord, wfdelta, revsyncDelta,
+					newRevDelta, merge, canonicalSandbox,
+					canonicalMember,projectDevpath, date,
+					frozen, author, projectName;
+	
+	private static final String[] fieldNames = {
+												"name",	"parent","type",
+												"memberrev","memberrevlockedbyme","workingrevlockedbyme",
+												"lockrecord", "wfdelta","revsyncdelta",
+												"newrevdelta","merge","canonicalSandbox",
+												"canonicalMember","projectDevpath", "date"};
+	public String getFrozen() {
+		return frozen;
+	}
+
+	public void setFrozen(String frozen) {
+		this.frozen = frozen;
+	}
+
+	public String getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
+	}
+
 	public Member() {
 		
 	}
@@ -12,51 +39,111 @@ public class Member {
 	public Member(Map<String, String> memberPrefs) {
 		for (String field : memberPrefs.keySet()) {
 			String value = memberPrefs.get(field);
-			if (field.equals(fieldNames[0])) {
+			if (field.equals("name")) {
 				setName(value);
-			} else if (field.equals(fieldNames[1])) {
-				setName(value);
-			} else if (field.equals(fieldNames[2])) {
+			} else if (field.equals("membername")) {
+				setMemberName(value);
+			} else if (field.equals("parent")) {
 				setParent(value);
-			} else if (field.equals(fieldNames[3])) {
+			} else if (field.equals("type")) {
 				setType(value);
-			} else if (field.equals(fieldNames[4])) {
+			} else if (field.equals("memberrev") || field.equals("memberrevision")) {
 				setMemberRev(value);
-			} else if (field.equals(fieldNames[5])) {
+			} else if (field.equals("memberrevlockedbyme")) {
 				setMemberRevLocedByMe(value);
-			} else if (field.equals(fieldNames[6])) {
+			} else if (field.equals("workingrevlockedbyme")) {
 				setWorkingRevLockedByMe(value);
-			}else if (field.equals(fieldNames[7])) {
+			}else if (field.equals("lockrecord")) {
 				setLockrecord(value);
-			}else if (field.equals(fieldNames[8])) {
+			}else if (field.equals("wfdelta")) {
 				setWfdelta(value);
-			}else if (field.equals(fieldNames[9])) {
+			}else if (field.equals("revsyncdelta")) {
 				setRevsyncDelta(value);
-			}else if (field.equals(fieldNames[10])) {
+			}else if (field.equals("newrevdelta")) {
 				setNewRevDelta(value);
-			}else if (field.equals(fieldNames[11])) {
+			}else if (field.equals("merge")) {
 				setMerge(value);
-			}else if (field.equals(fieldNames[12])) {
+			}else if (field.equals("canonicalSandbox")) {
 				setCanonicalSandbox(value);
-			}else if (field.equals(fieldNames[13])) {
+			}else if (field.equals("canonicalMember")) {
 				setCanonicalMember(value);
-			}else if (field.equals(fieldNames[14])) {
+			}else if (field.equals("projectDevpath")) {
 				setProjectDevpath(value);
+			}else if (field.equals("date")) {
+				setDate(value);
+			}else if (field.equals("frozen")) {
+				setFrozen(value);
+			}else if (field.equals("author")) {
+				setAuthor(value);
+			}else if (field.equals("projectname")) {
+				setProjectName(value);
+			}
+			
+		}
+	}
+	
+	public void addMemberProps(Map<String, String> memberProps) {
+		for (String field : memberProps.keySet()) {
+			String value = memberProps.get(field);
+
+			
+			if (field.equals("name")) {
+				setName(value);
+			} else if (field.equals("membername")) {
+				setMemberName(value);
+			} else if (field.equals("parent")) {
+				setParent(value);
+			} else if (field.equals("type")) {
+				setType(value);
+			} else if (field.equals("memberrev") || field.equals("memberrevision")) {
+				setMemberRev(value);
+			} else if (field.equals("memberrevlockedbyme")) {
+				setMemberRevLocedByMe(value);
+			} else if (field.equals("workingrevlockedbyme")) {
+				setWorkingRevLockedByMe(value);
+			}else if (field.equals("lockrecord")) {
+				setLockrecord(value);
+			}else if (field.equals("wfdelta")) {
+				setWfdelta(value);
+			}else if (field.equals("revsyncdelta")) {
+				setRevsyncDelta(value);
+			}else if (field.equals("newrevdelta")) {
+				setNewRevDelta(value);
+			}else if (field.equals("merge")) {
+				setMerge(value);
+			}else if (field.equals("canonicalSandbox")) {
+				setCanonicalSandbox(value);
+			}else if (field.equals("canonicalMember")) {
+				setCanonicalMember(value);
+			}else if (field.equals("projectDevpath")) {
+				setProjectDevpath(value);
+			}else if (field.equals("date")) {
+				setDate(value);
+			}else if (field.equals("frozen")) {
+				setFrozen(value);
+			}else if (field.equals("author")) {
+				setAuthor(value);
+			}else if (field.equals("projectname")) {
+				setProjectName(value);
 			}
 		}
 	}
 	
+	
+
 	@Override
 	public String toString() {
-		return "Member [name=" + name + ", parent=" + parent + ", type=" + type
-				+ ", memberRev=" + memberRev + ", memberRevLocedByMe="
-				+ memberRevLocedByMe + ", workingRevLockedByMe="
-				+ workingRevLockedByMe + ", lockrecord=" + lockrecord
-				+ ", wfdelta=" + wfdelta + ", revsyncDelta=" + revsyncDelta
-				+ ", newRevDelta=" + newRevDelta + ", merge=" + merge
-				+ ", canonicalSandbox=" + canonicalSandbox
-				+ ", canonicalMember=" + canonicalMember + ", projectDevpath="
-				+ projectDevpath + "]";
+		return "Member [name=" + name + ", memberName=" + memberName
+				+ ", parent=" + parent + ", type=" + type + ", memberRev="
+				+ memberRev + ", memberRevLocedByMe=" + memberRevLocedByMe
+				+ ", workingRevLockedByMe=" + workingRevLockedByMe
+				+ ", lockrecord=" + lockrecord + ", wfdelta=" + wfdelta
+				+ ", revsyncDelta=" + revsyncDelta + ", newRevDelta="
+				+ newRevDelta + ", merge=" + merge + ", canonicalSandbox="
+				+ canonicalSandbox + ", canonicalMember=" + canonicalMember
+				+ ", projectDevpath=" + projectDevpath + ", date=" + date
+				+ ", frozen=" + frozen + ", author=" + author
+				+ ", projectName=" + projectName + "]";
 	}
 
 	public String getName() {
@@ -169,6 +256,30 @@ public class Member {
 
 	public void setProjectDevpath(String projectDevpath) {
 		this.projectDevpath = projectDevpath;
+	}
+
+	public String getDate() {
+		return date;
+	}
+
+	public void setDate(String date) {
+		this.date = date;
+	}
+
+	public String getMemberName() {
+		return memberName;
+	}
+
+	public void setMemberName(String memberName) {
+		this.memberName = memberName;
+	}
+
+	public String getProjectName() {
+		return projectName;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
 	}
 
 }

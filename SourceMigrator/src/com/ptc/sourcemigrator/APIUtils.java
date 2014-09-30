@@ -131,8 +131,7 @@ public class APIUtils{
 			
     	}
     }
-	
-	
+
 	public static void dropSandbox(String sandbox, String deletionPolicy) {
 		LinkedList<String> ll = new LinkedList<String>();
 		ll.add(sandbox);
@@ -720,7 +719,7 @@ public class APIUtils{
 	}
 	
 	public void displayData() {
-		getProjects();
+		getProjects(true, null);
 		  for(Project project : projects) {
 	        	System.out.println(project);
 	        	List<Sandbox> sandboxes = getSandboxes(project.getName(),this.getHostname());
@@ -735,7 +734,7 @@ public class APIUtils{
 	}
 
 	public void dropAndDeleteAllProjects() {
-		List<Project> projects = getProjects();
+		List<Project> projects = getProjects(true, null);
 		for (Project project : projects) {
 			String projectName = project.getName();
 			dropProject(projectName);
@@ -813,6 +812,11 @@ public class APIUtils{
 	 * @return list of members on the specified sandbox
 	 */
 	public List<Member> getMembers(String sandboxName, String hostname) {
+		Sandbox sandbox = getSandbox(sandboxName);
+		if (sandbox == null) {
+			return null;
+		}
+		
 		List<Member> listOfMembers = new LinkedList<Member>();
 		Map<String, String> options = new HashMap<String, String>();
 		options.put("sandbox", sandboxName);
@@ -825,6 +829,17 @@ public class APIUtils{
 		for (Map<String,String> memberPrefs : membersPrefs) {
 			listOfMembers.add(new Member(memberPrefs));
 		}
+		
+		for (Member member : listOfMembers) { //get details
+			Map<String, String> opts = new HashMap<>();
+			opts.put("project", sandbox.getProject());
+			opts.put("hostname", hostname);
+			Map<String,String> item = getSIItem("memberinfo", opts, null, new File(member.getName()).getName(), false);
+			if (item != null) {
+				member.addMemberProps(item);
+			}
+		}
+		
 		return listOfMembers;
 	}
 
@@ -848,7 +863,7 @@ public class APIUtils{
 	/***
 	 * Returns list of all projects
 	 * @return list of all projects on server
-	 */
+	
 	public List<Project> getProjects() {
 		List<Project> projects = new LinkedList<>();
 		
@@ -864,8 +879,9 @@ public class APIUtils{
 		}
 		
 		return projects;
+		
 	}
-
+ */
 	/**
 	 * Return one project if projectName was specified or all projects if not.
 	 * @param displaySubprojects - if should include subprojects
@@ -873,12 +889,12 @@ public class APIUtils{
 	 * @return list of projects
 	 */
 	public List<Project> getProjects(boolean displaySubprojects, String projectName ) {
+		List<Project> projects = new LinkedList<Project>();
 		List<String> opts2 = new LinkedList<String>();
 		if (displaySubprojects) {
 			opts2.add("displaysubs");
 		}
-		List<Project> projects = new LinkedList<Project>();
-		
+
 		List<Map<String, String>> items = getSIItems("projects", null, opts2, null, false);
 		if (projectName != null) { // ProjectName filter
 			for (Map<String,String> item : items) {
@@ -893,6 +909,17 @@ public class APIUtils{
 				projects.add(new Project(item));
 			}			
 		}
+		
+		for (Project project : projects) { //get details 
+			Map<String, String> opts = new HashMap<>();
+			opts.put("project", project.getName());
+			Map<String,String> item = getSIItem("projectinfo", opts, null, null, false);
+			if (item != null) {
+				project.addProjectProps(item);
+			}
+			
+		}
+		
 		return projects;
 	}
 
