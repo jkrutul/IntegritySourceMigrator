@@ -1,21 +1,28 @@
 package com.ptc.sourcemigrator.models;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class Project {
-	private String name, path, isSubproject, isShared, parent, isVariant, developmentPath, isBuild, buildRevision;
-	private final static String fieldNames[] = {"projectName","canonicalPath","isSubproject","isShared","parentProject","isVariant","developmentPath","isBuild","buildRevision"};
-	
+	private String name, path, isSubproject, isShared, parent, isVariant, isBuild, buildRevision; //TODO support lastCheckpoint
+	private final static String fieldNames[] = {"projectName","canonicalPath","isSubproject","isShared","parentProject","isVariant","developmentPath","isBuild","buildRevision", "revision", "developmentPaths"};
+	private List<String> developmentPaths = new LinkedList<>();
 	public Project() {
 		
 	}
 	
 	@Override
 	public String toString() {
+		String devPaths = new String();
+		for (String devPath : developmentPaths) {
+			devPaths +=devPath+",";
+		}
+		
 		return "Project [name=" + name + ", path=" + path + ", isSubproject="
 				+ isSubproject + ", isShared=" + isShared + ", parent="
 				+ parent + ", isVariant=" + isVariant + ", developmentPath="
-				+ developmentPath + ", isBuild=" + isBuild + ", buildRevision="
+				+ devPaths + ", isBuild=" + isBuild + ", buildRevision="
 				+ buildRevision + "]";
 	}
 
@@ -34,11 +41,43 @@ public class Project {
 				setParent(value);
 			} else if (field.equals(fieldNames[5])) {
 				setIsVariant(value);
+			} else if (field.equals(fieldNames[6]) || field.equals(fieldNames[10])) {
+				setDevelopmentPath(value);
+			}else if (field.equals(fieldNames[7])) {
+				setIsBuild(value);
+			}else if (field.equals(fieldNames[8]) || field.equals(fieldNames[9]) ) {
+				setBuildRevision(value);
+			}
+		}
+	}
+	
+	public void addProjectProps(Map<String,String> projectProps) {
+		for (String field : projectProps.keySet()) {
+			String value = projectProps.get(field);
+			
+			if (value == null) {
+				continue;
+			}
+			
+			if (field.equals(fieldNames[0])) {
+				setName(value);
+			} else if (field.equals(fieldNames[1])) {
+				setPath(value);
+			} else if (field.equals(fieldNames[2])) {
+				setIsSubproject(value);
+			} else if (field.equals(fieldNames[3])) {
+				setIsShared(value);
+			} else if (field.equals(fieldNames[4])) {
+				setParent(value);
+			} else if (field.equals(fieldNames[5])) {
+				setIsVariant(value);
 			} else if (field.equals(fieldNames[6])) {
 				setDevelopmentPath(value);
 			}else if (field.equals(fieldNames[7])) {
 				setIsBuild(value);
 			}else if (field.equals(fieldNames[8])) {
+				setBuildRevision(value);
+			} else if (field.equals(fieldNames[9])) {
 				setBuildRevision(value);
 			}
 		}
@@ -54,7 +93,10 @@ public class Project {
 		this.isShared = isShared;
 		this.parent = parent;
 		this.isVariant = isVariant;
-		this.developmentPath = developmentPath;
+		String[] devPaths = developmentPath.split(",");
+		for(String devPath : devPaths) {
+			developmentPaths.add(devPath);
+		}
 		this.isBuild = isBuild;
 		this.buildRevision = buildRevision;
 	}
@@ -107,12 +149,13 @@ public class Project {
 		this.isVariant = isVariant;
 	}
 
-	public String getDevelopmentPath() {
-		return developmentPath;
+	public List<String> getDevelopmentPaths() {
+		return developmentPaths;
 	}
 
 	public void setDevelopmentPath(String developmentPath) {
-		this.developmentPath = developmentPath;
+		if (developmentPath != null)
+		this.developmentPaths.add(developmentPath);
 	}
 
 	public String getIsBuild() {

@@ -850,7 +850,19 @@ public class APIUtils{
 	 * @return list of all projects on server
 	 */
 	public List<Project> getProjects() {
-		this.projects = getProjects(true, null);
+		List<Project> projects = new LinkedList<>();
+		
+		List<Project> projectNames = getProjects(true, null);
+		for (Project project : projectNames) {
+			Map<String, String> opts = new HashMap<>();
+			opts.put("project", project.getName());
+			Map<String,String> item = getSIItem("projectinfo", opts, null, null, false);
+			if (item != null) {
+				project.addProjectProps(item);
+				projects.add(project);
+			}
+		}
+		
 		return projects;
 	}
 
@@ -867,8 +879,8 @@ public class APIUtils{
 		}
 		List<Project> projects = new LinkedList<Project>();
 		
-		List<Map<String, String>> items = getSIItems("projects", null, opts2, null, true);
-		if (projectName != null) {
+		List<Map<String, String>> items = getSIItems("projects", null, opts2, null, false);
+		if (projectName != null) { // ProjectName filter
 			for (Map<String,String> item : items) {
 				Project project = new Project(item);
 				if (project.getName().equals(projectName)) {
@@ -887,7 +899,7 @@ public class APIUtils{
 	private Map<String,String> getSIItem(String commandName, Map<String,String> options, List<String> options2, String selection, boolean onServer) {
 		List<Map<String, String>> items = getSIItems(commandName, options, options2, selection, onServer);
 		if (!items.isEmpty()) {
-			return getSIItems(commandName, options, options2, selection, onServer).get(0);
+			return items.get(0);
 		} 
 		return null;
 	}
