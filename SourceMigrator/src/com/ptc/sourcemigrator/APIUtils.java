@@ -163,10 +163,8 @@ public class APIUtils{
 	}
 	
 	public static List<Sandbox> getSandboxes(String project, String hostname) {
-		//Map<String, String> opt = new HashMap<String, String>();
 		List<Sandbox> sandboxes = new LinkedList<Sandbox>();
 		Command cmd = new Command(Command.SI , "sandboxes");
-
 		String[] command = cmd.toStringArray();
 		String thecmd = "";
 		for (int i = 0; i < command.length; i++) {
@@ -207,10 +205,31 @@ public class APIUtils{
 					}
 				}
 			}
+		
+			for (Sandbox sandbox : sandboxes) {
+				Map<String,String> options = new HashMap<>();
+				options.put("sandbox", sandbox.getName());
+				cmd.setCommandName("sandboxinfo");
+				cmd.addOption(new Option("sandbox",sandbox.getName()));
+				response = clientCr.execute(cmd);
+			
+				if (response != null) {
+					WorkItemIterator wii = response.getWorkItems();
+					while (wii.hasNext()) { 
+						Map<String, String> item = new HashMap<String, String>();
+						WorkItem wi = wii.next();
+						Iterator<Field> iterator = wi.getFields();
+						while (iterator.hasNext()) {
+							Field field = iterator.next();
+							item.put(field.getName(), field.getValueAsString());	
+						}
+						sandbox.addSandboxProps(item);
+					}
+				}
+			}
 		} catch (APIException e) {
 			log.error(e);
 		}
-
 		return sandboxes;
 	}
 

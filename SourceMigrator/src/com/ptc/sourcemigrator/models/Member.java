@@ -8,34 +8,12 @@ public class Member {
 					lockrecord, wfdelta, revsyncDelta,
 					newRevDelta, merge, canonicalSandbox,
 					canonicalMember,projectDevpath, date,
-					frozen, author, projectName;
+					frozen, author, projectName, projectFk, id;
 	
-	private static final String[] fieldNames = {
-												"name",	"parent","type",
-												"memberrev","memberrevlockedbyme","workingrevlockedbyme",
-												"lockrecord", "wfdelta","revsyncdelta",
-												"newrevdelta","merge","canonicalSandbox",
-												"canonicalMember","projectDevpath", "date"};
-	public String getFrozen() {
-		return frozen;
-	}
-
-	public void setFrozen(String frozen) {
-		this.frozen = frozen;
-	}
-
-	public String getAuthor() {
-		return author;
-	}
-
-	public void setAuthor(String author) {
-		this.author = author;
-	}
-
 	public Member() {
 		
 	}
-	
+
 	public Member(Map<String, String> memberPrefs) {
 		for (String field : memberPrefs.keySet()) {
 			String value = memberPrefs.get(field);
@@ -77,11 +55,13 @@ public class Member {
 				setAuthor(value);
 			}else if (field.equals("projectname")) {
 				setProjectName(value);
+			}else if (field.equals("projectFk")) {
+				setProjectFk(value);
 			}
 			
 		}
 	}
-	
+
 	public void addMemberProps(Map<String, String> memberProps) {
 		for (String field : memberProps.keySet()) {
 			String value = memberProps.get(field);
@@ -125,11 +105,165 @@ public class Member {
 				setAuthor(value);
 			}else if (field.equals("projectname")) {
 				setProjectName(value);
+			}else if (field.equals("projectFk")) {
+				setProjectFk(value);
 			}
 		}
 	}
+
+	public String getAuthor() {
+		return author;
+	}
+
+	public String getCanonicalMember() {
+		return canonicalMember;
+	}
 	
+	public String getCanonicalSandbox() {
+		return canonicalSandbox;
+	}
 	
+	public String getDate() {
+		return date;
+	}
+
+	public String getFrozen() {
+		return frozen;
+	}
+
+	public String getLockrecord() {
+		return lockrecord;
+	}
+
+	public String getMemberName() {
+		return memberName;
+	}
+
+	public String getMemberRev() {
+		return memberRev;
+	}
+
+	public String getMemberRevLocedByMe() {
+		return memberRevLocedByMe;
+	}
+
+	public String getMerge() {
+		return merge;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getNewRevDelta() {
+		return newRevDelta;
+	}
+
+	public String getParent() {
+		return parent;
+	}
+
+	public String getProjectDevpath() {
+		return projectDevpath;
+	}
+
+	public String getProjectName() {
+		return projectName;
+	}
+
+	public String getRevsyncDelta() {
+		return revsyncDelta;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public String getWfdelta() {
+		return wfdelta;
+	}
+
+	public String getWorkingRevLockedByMe() {
+		return workingRevLockedByMe;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
+	}
+
+	public void setCanonicalMember(String canonicalMember) {
+		this.canonicalMember = canonicalMember;
+	}
+
+	public void setCanonicalSandbox(String canonicalSandbox) {
+		this.canonicalSandbox = canonicalSandbox;
+	}
+
+	public void setDate(String date) {
+		this.date = date;
+	}
+
+	public void setFrozen(String frozen) {
+		this.frozen = frozen;
+	}
+
+	public void setLockrecord(String lockrecord) {
+		this.lockrecord = lockrecord;
+	}
+
+	public void setMemberName(String memberName) {
+		this.memberName = memberName;
+	}
+
+	public void setMemberRev(String memberRev) {
+		this.memberRev = memberRev;
+	}
+
+	public void setMemberRevLocedByMe(String memberRevLocedByMe) {
+		this.memberRevLocedByMe = memberRevLocedByMe;
+	}
+
+	public void setMerge(String merge) {
+		this.merge = merge;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setNewRevDelta(String newRevDelta) {
+		this.newRevDelta = newRevDelta;
+	}
+
+	public void setParent(String parent) {
+		this.parent = parent;
+	}
+
+	public void setProjectDevpath(String projectDevpath) {
+		this.projectDevpath = projectDevpath;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
+	}
+
+	public void setRevsyncDelta(String revsyncDelta) {
+		this.revsyncDelta = revsyncDelta;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public void setWfdelta(String wfdelta) {
+		this.wfdelta = wfdelta;
+	}
+
+	public void setWorkingRevLockedByMe(String workingRevLockedByMe) {
+		this.workingRevLockedByMe = workingRevLockedByMe;
+	}
+
+
 
 	@Override
 	public String toString() {
@@ -143,143 +277,24 @@ public class Member {
 				+ canonicalSandbox + ", canonicalMember=" + canonicalMember
 				+ ", projectDevpath=" + projectDevpath + ", date=" + date
 				+ ", frozen=" + frozen + ", author=" + author
-				+ ", projectName=" + projectName + "]";
+				+ ", projectName=" + projectName + ", projectFk=" + projectFk
+				+ "]";
 	}
 
-	public String getName() {
-		return name;
+	public String getProjectFk() {
+		return projectFk;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setProjectFk(String projectFk) {
+		this.projectFk = projectFk;
 	}
 
-	public String getParent() {
-		return parent;
+	public String getId() {
+		return id;
 	}
 
-	public void setParent(String parent) {
-		this.parent = parent;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public String getMemberRev() {
-		return memberRev;
-	}
-
-	public void setMemberRev(String memberRev) {
-		this.memberRev = memberRev;
-	}
-
-	public String getMemberRevLocedByMe() {
-		return memberRevLocedByMe;
-	}
-
-	public void setMemberRevLocedByMe(String memberRevLocedByMe) {
-		this.memberRevLocedByMe = memberRevLocedByMe;
-	}
-
-	public String getWorkingRevLockedByMe() {
-		return workingRevLockedByMe;
-	}
-
-	public void setWorkingRevLockedByMe(String workingRevLockedByMe) {
-		this.workingRevLockedByMe = workingRevLockedByMe;
-	}
-
-	public String getLockrecord() {
-		return lockrecord;
-	}
-
-	public void setLockrecord(String lockrecord) {
-		this.lockrecord = lockrecord;
-	}
-
-	public String getWfdelta() {
-		return wfdelta;
-	}
-
-	public void setWfdelta(String wfdelta) {
-		this.wfdelta = wfdelta;
-	}
-
-	public String getRevsyncDelta() {
-		return revsyncDelta;
-	}
-
-	public void setRevsyncDelta(String revsyncDelta) {
-		this.revsyncDelta = revsyncDelta;
-	}
-
-	public String getNewRevDelta() {
-		return newRevDelta;
-	}
-
-	public void setNewRevDelta(String newRevDelta) {
-		this.newRevDelta = newRevDelta;
-	}
-
-	public String getMerge() {
-		return merge;
-	}
-
-	public void setMerge(String merge) {
-		this.merge = merge;
-	}
-
-	public String getCanonicalSandbox() {
-		return canonicalSandbox;
-	}
-
-	public void setCanonicalSandbox(String canonicalSandbox) {
-		this.canonicalSandbox = canonicalSandbox;
-	}
-
-	public String getCanonicalMember() {
-		return canonicalMember;
-	}
-
-	public void setCanonicalMember(String canonicalMember) {
-		this.canonicalMember = canonicalMember;
-	}
-
-	public String getProjectDevpath() {
-		return projectDevpath;
-	}
-
-	public void setProjectDevpath(String projectDevpath) {
-		this.projectDevpath = projectDevpath;
-	}
-
-	public String getDate() {
-		return date;
-	}
-
-	public void setDate(String date) {
-		this.date = date;
-	}
-
-	public String getMemberName() {
-		return memberName;
-	}
-
-	public void setMemberName(String memberName) {
-		this.memberName = memberName;
-	}
-
-	public String getProjectName() {
-		return projectName;
-	}
-
-	public void setProjectName(String projectName) {
-		this.projectName = projectName;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 }

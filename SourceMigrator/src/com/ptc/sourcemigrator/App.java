@@ -95,15 +95,25 @@ public class App{ //
         }
         Sandbox calcSandbox= APIUtils.getSandboxes("/Calculator/project.pj", SERVER_DEST).get(0);
         List<Member> members = dest.getMembers(calcSandbox.getName(), SERVER_DEST);
+        long projectId = db.getProjectId("/Calculator/project.pj");
+        //members = db.getMembersData();
+        members = db.getMembersData();
+        for(Member member : members) {
+            System.out.println(member);
+        }
+
         
+       
         
         
         projects = db.getProjectsData();
-       
+        
         for (Project project : projects) {
         	System.out.println(project);
         	System.out.println(db.getProjectId(project.getName()));
         }
+        
+
         
         
      
